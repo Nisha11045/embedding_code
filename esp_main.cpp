@@ -10,7 +10,7 @@
 #include <WiFiUdp.h>
 #include <map>
 #include <Keypad.h>
-String Web_App_URL = "https://script.google.com/macros/s/AKfycbxka-r2PtzPzcCwZP3QdiTzR44ibV_QulRlY3MqlOGV4_u1V4cF0RE0VYZeY4C-QmKX/exec";
+String Web_App_URL = "https://script.google.com/macros/s/AKfycbyOwknxHK9e47ERILi6CA0gT0_ctp3e8lwaZAdBD6ht7DvBNV_qEiPRpvS-bJUZHquP/exec";
 const byte ROW_NUM = 4;
 const byte COL_NUM = 4;
 char keys[ROW_NUM][COL_NUM] = {
@@ -21,8 +21,8 @@ char keys[ROW_NUM][COL_NUM] = {
 byte pin_rows[ROW_NUM] = {32, 33, 25, 26}; // Row pins (D26, D25, D33, D32)
 byte pin_cols[COL_NUM] = {13, 12, 14, 27}; // Column pins (D13, D12, D14, D27)
 Keypad keypad = Keypad(makeKeymap(keys), pin_rows, pin_cols, ROW_NUM, COL_NUM);
-const char *ssid = "GalaxyWarich";
-const char *password = "Warich2264";
+const char *ssid = "Your WIFI Name";
+const char *password = "Your WIFI PASSWORD";
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 7 * 3600, 60000); // Offset for Thailand (GMT+7)
@@ -37,6 +37,7 @@ double PM10 = 0.0;
 double Light = 0.0;
 double Sound = 0.0;
 double Carbon = 0.0;
+int Quality = 0;
 
 int last1 = 0;
 int last1buf = 0;
@@ -226,13 +227,14 @@ void loop()
     {
       // Create a URL for sending or writing data to Google Sheets.
       String Send_Data_URL = Web_App_URL + "?sts=write";
-      Send_Data_URL = Send_Data_URL + "&temp=" + String(Temperature);
       Send_Data_URL = Send_Data_URL + "&humd=" + String(Humidity);
-      // Send_Data_URL += "&humd=" + String(PM25);
-      // Send_Data_URL += "&humd=" + String(PM10);
-      // Send_Data_URL += "&humd=" + String(Light);
-      // Send_Data_URL += "&humd=" + String(Sound);
-      // Send_Data_URL += "&humd=" + String(Carbon);
+      Send_Data_URL = Send_Data_URL + "&temp=" + String(Temperature);
+      Send_Data_URL = Send_Data_URL + "&pm25=" + String(PM25);
+      Send_Data_URL = Send_Data_URL + "&pm10=" + String(PM10);
+      Send_Data_URL = Send_Data_URL + "&light=" + String(Light);
+      Send_Data_URL = Send_Data_URL + "&sound=" + String(Sound);
+      Send_Data_URL = Send_Data_URL + "&carbon=" + String(Carbon);
+      Send_Data_URL = Send_Data_URL + "&quality=" + String(Quality);
 
       // Initialize HTTPClient as "http".
       HTTPClient http;
