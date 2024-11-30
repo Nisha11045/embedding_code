@@ -21,8 +21,8 @@ char keys[ROW_NUM][COL_NUM] = {
 byte pin_rows[ROW_NUM] = {32, 33, 25, 26}; // Row pins (D26, D25, D33, D32)
 byte pin_cols[COL_NUM] = {13, 12, 14, 27}; // Column pins (D13, D12, D14, D27)
 Keypad keypad = Keypad(makeKeymap(keys), pin_rows, pin_cols, ROW_NUM, COL_NUM);
-const char *ssid = "yaranaika";
-const char *password = "Inwza007";
+const char *ssid = "GalaxyWarich";
+const char *password = "Warich2264";
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 7 * 3600, 60000); // Offset for Thailand (GMT+7)
@@ -43,14 +43,14 @@ int last1buf = 0;
 int last2 = 0;
 int last2buf = 0;
 
-BlynkTimer timer;
-void serverTick();
+// BlynkTimer timer;
+// void serverTick();
 
 void setup()
 {
   Serial.begin(115200);
-  Blynk.begin(BLYNK_AUTH_TOKEN, "Rb-i", "frxsne5vz837k");
-  timer.setInterval(10000L, serverTick);
+  // Blynk.begin(BLYNK_AUTH_TOKEN, "Rb-i", "frxsne5vz837k");
+  // timer.setInterval(10000L, serverTick);
 
   lcd.begin(16, 2);
   lcd.backlight();
@@ -87,10 +87,10 @@ void setup()
   lcd.clear();
 }
 
-void serverTick()
-{
-  Blynk.syncVirtual(V11, V12);
-}
+// void serverTick()
+// {
+//   Blynk.syncVirtual(V11, V12);
+// }
 
 BLYNK_WRITE(V11)
 {
@@ -185,8 +185,8 @@ const unsigned long timeUpdateInterval = 1000; // Update time every 1 second
 
 void loop()
 {
-  Blynk.run();
-  timer.run();
+  // Blynk.run();
+  // timer.run();
 
   unsigned long currentMillis = millis();
   char key = keypad.getKey();
