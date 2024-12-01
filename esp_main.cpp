@@ -2,7 +2,6 @@
 #define BLYNK_TEMPLATE_ID "TMPL6vDy3JGgi"
 #define BLYNK_TEMPLATE_NAME "ESP32 Main"
 #define BLYNK_AUTH_TOKEN "hWv5ybBN5tI8L9qmAuemgcieHK8yNsas"
-#include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <WiFi.h>
 #include <NTPClient.h>
@@ -21,8 +20,8 @@ char keys[ROW_NUM][COL_NUM] = {
 byte pin_rows[ROW_NUM] = {32, 33, 25, 26}; // Row pins (D26, D25, D33, D32)
 byte pin_cols[COL_NUM] = {13, 12, 14, 27}; // Column pins (D13, D12, D14, D27)
 Keypad keypad = Keypad(makeKeymap(keys), pin_rows, pin_cols, ROW_NUM, COL_NUM);
-const char *ssid = "Your WIFI Name";
-const char *password = "Your WIFI PASSWORD";
+const char *ssid = "GalaxyWarich";
+const char *password = "Warich2264";
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 7 * 3600, 60000); // Offset for Thailand (GMT+7)
@@ -44,45 +43,41 @@ int last1buf = 0;
 int last2 = 0;
 int last2buf = 0;
 
-// BlynkTimer timer;
+BlynkTimer timer;
 // void serverTick();
 
+int retryCount = 0;
 void setup()
 {
   Serial.begin(115200);
   // Blynk.begin(BLYNK_AUTH_TOKEN, "Rb-i", "frxsne5vz837k");
   // timer.setInterval(10000L, serverTick);
-
-  lcd.begin(16, 2);
+  timer.setInterval(1000L, getKey);
+  lcd.begin();
   lcd.backlight();
   lcd.setCursor(0, 0);
   lcd.print("Connecting WiFi");
   WiFi.begin(ssid, password);
-  int retryCount = 0;
-  while (WiFi.status() != WL_CONNECTED && retryCount < maxRetries)
-  {
+  retryCount = 0;
+  while (WiFi.status() != WL_CONNECTED && retryCount < maxRetries) {
     delay(500);
     lcd.setCursor(0, 1);
     lcd.print("Retry: ");
     lcd.print(++retryCount);
   }
   lcd.clear();
-  if (WiFi.status() == WL_CONNECTED)
-  {
+  if (WiFi.status() == WL_CONNECTED) {
     lcd.setCursor(0, 0);
     lcd.print("WiFi Connected!");
     lcd.setCursor(0, 1);
     lcd.print(WiFi.localIP());
-    delay(2000);
-  }
-  else
-  {
+    delay(1000);
+  } else {
     lcd.setCursor(0, 0);
     lcd.print("WiFi Failed!");
     lcd.setCursor(0, 1);
     lcd.print("Restart device");
-    while (true)
-      ;
+    while (true);
   }
   timeClient.begin();
   lcd.clear();
@@ -145,8 +140,8 @@ BLYNK_WRITE(V12)
   last2buf = raw_data[3];
 }
 
-char buffer_key = '1';
-double value = 0;
+char buffer_key = '2';
+double value = 0.0;
 
 std::map<char, std::pair<String, String>> map_int_toString = {
     {'1', {"Humidity", "%"}},
@@ -158,17 +153,18 @@ std::map<char, std::pair<String, String>> map_int_toString = {
     {'7', {"Carbon", "C"}},
 };
 
+const char DEGREE_SYMBOL = (char)223; 
 void updateLCDRow1(char map, double value)
 {
   if (map_int_toString.find(map) != map_int_toString.end())
-  {                      // Check if key exists in map
+  {
     lcd.setCursor(0, 1); // Set cursor for the second row (line 1)
     lcd.print(map_int_toString[map].first);
     lcd.print(":");
     lcd.print(value);
     if (map_int_toString[map].first == "Temp")
     {
-      lcd.print((char)223);
+      lcd.print(DEGREE_SYMBOL);
     }
     lcd.print(map_int_toString[map].second);
   }
@@ -179,50 +175,63 @@ void updateLCDRow1(char map, double value)
   }
 }
 
-const unsigned long debounceDelay = 50;        // Debounce delay in milliseconds
 unsigned long lastPressTime = 0;               // Store the time of the last key press
 unsigned long lastTimeUpdate = 0;              // Time when the time was last updated
-const unsigned long timeUpdateInterval = 1000; // Update time every 1 second
+const unsigned long timeUpdateInterval = 1000; // Update time every 4 second
+unsigned long currentMillis = 0;
+char key = '0';
+int int_Value = buffer_key - '0';
+
+
+// Debounce time in milliseconds
+unsigned long debounceTime = 50; // 300ms debounce
+unsigned long lastKeyPressTime = 0;
+void getKey() {
+  if (millis() - lastKeyPressTime > debounceTime) {
+    char key = keypad.getKey();
+    if (key) {
+      buffer_key = key;
+      int_Value = key - '0'; // Convert char to integer
+        Serial.println(int_Value);
+      } 
+    lastKeyPressTime = millis(); // Update the last key press time
+  }
+}
+
 
 void loop()
 {
   // Blynk.run();
-  // timer.run();
+  timer.run();
 
-  unsigned long currentMillis = millis();
+  currentMillis = millis();
+
   char key = keypad.getKey();
-  if (key)
-  {
-    if (currentMillis - lastPressTime > debounceDelay)
-    {
-      buffer_key = key;
-      lastPressTime = currentMillis;
-    }
-  }
+  if (key) {
+    buffer_key = key;
+    int_Value = key - '0'; // Convert char to integer
+      Serial.println(int_Value);
+    } 
+  lastKeyPressTime = millis(); // Update the last key press time
 
   if (currentMillis - lastTimeUpdate >= timeUpdateInterval)
   {
     lcd.clear();
-
     // update LCD Row0
     timeClient.update();
     String currentTime = timeClient.getFormattedTime(); // Format: HH:MM:SS
     lcd.setCursor(0, 0);
     lcd.print("Time: ");
     lcd.print(currentTime);
-
     // update LCD Row1
     std::vector<double> sensorValues = {Humidity, Temperature, PM25, PM10, Light, Sound, Carbon};
-    int int_Value = buffer_key - '0'; // Convert char to int ('1' -> 1, '2' -> 2, etc.)
-    // Check if the key is valid (1-7)
+    int_Value = buffer_key - '0';
     if (int_Value >= 1 && int_Value <= 7)
     {
-      double value = sensorValues[int_Value - 1]; // Get the corresponding sensor value
-      updateLCDRow1(buffer_key, value);           // Update LCD with the value
+      value = sensorValues[int_Value - 1];
+      updateLCDRow1(buffer_key, value);
     }
 
-    //----------------------------------------Conditions that are executed when WiFi is connected.
-    // This condition is the condition for sending or writing data to Google Sheets.
     if (WiFi.status() == WL_CONNECTED)
     {
       // Create a URL for sending or writing data to Google Sheets.
@@ -245,20 +254,10 @@ void loop()
 
       // Gets the HTTP status code.
       int httpCode = http.GET();
-      Serial.print("HTTP Status Code : ");
-      Serial.println(httpCode);
-
-      // Getting response from google sheets.
-      String payload;
-      if (httpCode > 0)
-      {
-        payload = http.getString();
-        Serial.println("Payload : " + payload);
-      }
-
       http.end();
     }
 
     lastTimeUpdate = currentMillis;
   }
+  delay(5);
 }
